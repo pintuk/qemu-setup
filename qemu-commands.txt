@@ -1,0 +1,72 @@
+BUSYBOX:
+----------
+cd busybox-1.31.1
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- defconfig
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- menuconfig
+Change:
+Settings -> Build Options -> compile Busybox as a static executable (no shared libs)
+Save
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- instal
+cd _install/
+find . | cpio -o --format=newc > ../rootfs.img
+cd ..
+gzip -c rootfs.img > ../rootfs.img.gz
+
+sudo cpio -id < ../rootfs.img
+
+cd _install
+mkdir proc sys dev etc etc/init.d
+cd etc/init.d/
+vi rcS
+{{{
+        #!/bin/sh
+
+        mount -t proc none /proc
+        mount -t sysfs none /sys
+        /sbin/mdev -s
+
+}}}
+chmod +x _install/etc/init.d/rcS
+
+KERNEL:
+----------
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- vexpress_defconfig
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j8
+
+QEMU:
+---------
+qemu-system-arm -M vexpress-a9 -m 1024M -kernel KERNEL/linux/arch/arm/boot/zImage -dtb KERNEL/linux/arch/arm/boot/dts/vexpress-v2p-ca9.dtb -initrd BUSYBOX/rootfs.img.gz -append "console=ttyAMA0 root=/dev/ram rdinit=/sbin/init ip=dhcp" -nographic
+
+
+qemu-system-arm -M vexpress-a9 -m 1024M -kernel KERNEL/linux/arch/arm/boot/zImage -dtb KERNEL/linux/arch/arm/boot/dts/vexpress-v2p-ca9.dtb -append "console=ttyAMA0,115200 root=/dev/nfs nfsroot=10.0.2.2:/local/mnt/workspace/PINTU/OSS/nfs/_install rw ip=10.0.2.15::10.0.2.1:255.255.255.0 init=/sbin/init" -nographic
+
+
+ARM rootfs with systemd support:
+=================================
+wget http://archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz
+mkdir rootfs-arm
+mv ArchLinuxARM-armv7-latest.tar.gz rootfs-arm/
+cd rootfs-arm/
+dd if=/dev/zero of=./arch_rootfs.ext4 bs=1M count=$((4 * 1024))
+sync
+mkfs.ext4 ./arch_rootfs.ext4
+mkdir root
+sudo mount ./arch_rootfs.ext4 ./root
+sudo cp ArchLinuxARM-armv7-latest.tar.gz root/
+cd root/
+sudo tar -xzf ArchLinuxARM-armv7-latest.tar.gz
+sudo rm -rf ArchLinuxARM-armv7-latest.tar.gz
+sync
+sudo umount ./root
+qemu-system-arm -M vexpress-a9 -m 1024M -kernel KERNEL/linux/arch/arm/boot/zImage -dtb KERNEL/linux/arch/arm/boot/dts/vexpress-v2p-ca9.dtb -append "root=/dev/mmcblk0 rw roottype=ext4 console=ttyAMA0,115200" -drive if=sd,driver=raw,cache=writeback,file=./rootfs-arm/arch_rootfs.ext4 -nographic -smp 4
+
+
+arm-linux-gnueabi-gcc -static -o test1.out test1.c
+
+
+qemu-system-arm -M virt -m 256M -kernel KERNEL/kernel-3.18/linux/arch/arm/boot/zImage -initrd BUSYBOX/rootfs.img.gz -append "console=ttyAMA0 root=/dev/ram rdinit=/sbin/init ip=dhcp" -nographic
+sudo ./create_rootfs.sh
+sync ; sync ; sync
+
+
+qemu-system-arm -M vexpress-a9 -m 96M -kernel ../KERNEL/CRASH-KERNEL-TEST/linux/arch/arm/boot/zImage -dtb ../KERNEL/CRASH-KERNEL-TEST/linux/arch/arm/boot/dts/vexpress-v2p-ca9.dtb -initrd ../BUSYBOX/rootfs.img.gz -append "console=ttyAMA0 root=/dev/ram rdinit=/sbin/init ip=dhcp crashkernel=16M" -nographic

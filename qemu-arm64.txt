@@ -1,0 +1,35 @@
+qemu-system-aarch64 \
+    -M  virt \
+    -cpu cortex-a53 \
+    -smp 2 \
+    -m 1024M \
+    -kernel ./linux-5.3.7/out_aarch64/arch/arm64/boot/Image \
+    -append "root=/dev/ram rdinit=sbin/init  console=ttyAMA0 ignore_loglevel" \
+    -initrd ./my-rootfs/rootfs.img \
+    -nographic 
+
+
+
+qemu-system-aarch64 -machine virt -cpu cortex-a57 -m 1024M -nographic -smp 1 -hda ./rootfs-arm/arch_rootfs.ext4 -kernel ../KERNEL/CRASH-KERNEL-TEST/Main-ARM64/linux/arch/arm64/boot/Image -append "console=ttyAMA0 root=/dev/vda"
+
+
+qemu-system-aarch64 -machine vexpress-a15 -nographic -smp 1 -m 1024M -kernel ../KERNEL/CRASH-KERNEL-TEST/Main-ARM64/linux/arch/arm64/boot/Image -initrd ../BUSYBOX/for_arm64/rootfs.img -append "root=/dev/ram rdinit=/sbin/init"
+
+
+sudo ./qemu-4.2.1/aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 -m 1024M -kernel ../KERNEL/CRASH-KERNEL-TEST/Main-ARM64/linux/arch/arm64/boot/Image -initrd ../BUSYBOX/rootfs.img -append "root=/dev/ram rdinit=/sbin/init" -nographic
+
+
+sudo ./qemu-4.2.1/aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 -kernel /local/mnt/workspace/PINTU/WORK/Y2020/KERNEL-TEAM-WORK/REPO_HANA/poky/build/tmp-glibc/work/sa8155-oe-linux/linux-msm/5.4-r0/build/arch/arm64/boot/Image -initrd ../BUSYBOX/rootfs.img -append "root=/dev/ram rdinit=/sbin/init crashkernel=128M" -nographic -m 1024M
+
+
+sudo ./qemu-4.2.1/aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 -kernel ./primary-kernel-image/Image -initrd ../BUSYBOX/rootfs.img -append "root=/dev/ram rdinit=/sbin/init crashkernel=128M" -nographic -m 1024M
+
+
+sudo ./qemu-4.2.1/aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 -kernel ../KERNEL/CRASH-KERNEL-TEST/HANA-5.4/primary-kernel-image/Image -initrd ../BUSYBOX/rootfs.img -append "root=/dev/ram rdinit=/sbin/init crashkernel=256M" -nographic -m 1024M
+
+
+sudo ./qemu-4.2.1/aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 -kernel ../KERNEL/CRASH-KERNEL-TEST/HANA-5.4/primary-kernel-image/Image -initrd ../../WORK/Y2020/KERNEL-TEAM-WORK/HANA_INITRD_IMAGE/initrd-arm64-sm8150.gz -append "root=/dev/ram crashkernel=256M" -nographic -m 1024M
+
+
+./qemu-4.2.1/aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 -kernel ../KERNEL/CRASH-KERNEL-TEST/HANA-5.4/primary-kernel-image/Image -initrd ../BUSYBOX/for_arm64/rootfs.img.gz -append "root=/dev/ram rdinit=/sbin/init crashkernel=256M" -nographic -m 1024M
+

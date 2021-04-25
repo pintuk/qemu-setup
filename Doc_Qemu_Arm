@@ -1,0 +1,58 @@
+
+1.export ARCH=arm
+2.export CROSS_COMPILE=arm-linux-gnueabi-
+3.cd linux-4.18/
+4.make vexpress_defconfig
+5.make -j8 all
+6.cd ..
+7.cd busybox-1.29.2/
+8.make defconfig
+9.make -j8 all
+10.make menuconfig
+11.make -j8 all
+12.make menuconfig
+13.make -j8 all
+14.make install
+15.cd _install/
+16.mkdir proc sys dev etc etc/init.d
+17.cd ..
+18.chmod +x _install/etc/init.d/rcS 
+19.vi rcS 
+20.cd _install/
+21.find . | cpio -o --format=newc > ../rootfs.img 
+22.cd ..
+23.gzip -c rootfs.img > rootfs.img.gz
+24.qemu-system-arm --help
+25.qemu-system-arm -M vexpress-a9 -m 256M -kernel ~/g_qemu/linux/arch/arm/boot/zImage -dtb ~/g_qemu/linux/arch/arm/boot/dts/vexpress-v2p-ca9.dtb -initrd rootfs.img.gz -append "root=/dev/ram rdinit=/sbin/init"
+
+
+
+BusyBox Settings--> Build Options -> CrossCompiler prefix  Other settings, like networking ......
+
+make install
+cd _install
+find . | cpio -o --format=newc > ../rootfs.img
+cd ..
+gzip -c rootfs.img > rootfs.img.gz
+qemu-system-arm -M vexpress-a9 -m 256M -kernel ~/g_qemu/linux/arch/arm/boot/zImage -dtb ~/g_qemu/linux/arch/arm/boot/dts/vexpress-v2p-ca9.dtb -initrd rootfs.img.gz -append "root=/dev/ram rdinit=/sbin/init ip=dhcp"
+
+
+
+
+
+
+
+QEMU :-
+
+1.ls
+2.cat /proc/cpuinfo
+3.cat /proc/meminfo
+4.free -m
+5.ifconfig (not working)
+6.cat /proc/version
+7.uname -a 
+8.cat /proc/cmdline
+9.ls /sbin/init -l
+10.cd root
+11.file /bin/kill
+12.

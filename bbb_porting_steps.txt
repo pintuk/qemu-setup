@@ -1,0 +1,83 @@
+0. Required dump contents:-
+	a) linux-3.12-bone-black.tar.xz
+	b) u-boot-2016.01.tar.bz2
+	c) gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux.tar.xz
+	d) linux-3.12-bone-black.config	
+	e) core-image-minimal-beaglebone.tar.bz2(pre built rootfs from http://downloads.yoctoproject.org/releases/yocto/yocto-2.1/machines/beaglebone/)
+Extract the above tarballs under a workdir,say elinux_bbb_workdir under convienient location
+Note:- You may use diff versions of kernel source, u-boot source, toolchain
+after gaining some experience
+-----------------------------------------------------------------------------	
+1.Setting up toolchain
+	a.set path to unpacked pre-built cross toolchain gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux.tar.xz
+	eg:- export PATH=<path-of-elinux_bbb_workdir>/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux/bin
+	you may add this setting to ~/.profile (or) ~/.bash_profile (or) ~/.bashrc for further usage
+	verify:- arm-linux-gnueabihf-gcc and other tools under gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux/bin should work if path is set correctly
+-----------------------------------------------------------------------------
+2.under elinux_bbb_workdir,extract u-boot-2016.01.tar.bz2, refer it as USRC from now onwards, switch to u-boot-2016.01
+	make ARCH=arm am335x_boneblack_defconfig
+	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
+	#make tools-only
+	copy tools/mkimage to /usr/local/bin, or create a symlink
+or set path to <path-of-elinux_bbb_workdir>/u-boot-2014.04/tools	
+so that mkimage is available for kernel building in next step
+	copy MLO,u-boot.img to a temp dir under elinux_bbb_workdir,say sdtemp
+-----------------------------------------------------------------------------
+3.under elinux_bbb_workdir,extract linux-3.12-bone-black.tar.xz, refer it as KSRC for the target from now onwards,switch to KSRC
+	make ARCH=arm mrproper
+	cp ../linux-3.12-bone-black.config  .config
+	make ARCH=arm oldconfig
+	make ARCH=arm menuconfig	#driver --> block devices --> ... --> Default RAM disk size (65536)
+	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOADADDR=0x80008000 uImage dtbs
+	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules
+	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage-dtb.am335x-boneblack
+	#Copy KSRC/arch/arm/boot/uImage,KSRC/arch/arm/boot/uImage-dtb.am335x-boneblack,KSRC/arch/arm/boot/dts/am335x-boneblack.dtb to the sdtemp dir
+-----------------------------------------------------------------------------
+4.Gathering rootfs
+	You can use pre-built rootfs image for initial work,copy it to sdtemp dir.
+	dd if=/dev/zero of=rootfs.img bs=1M count=64
+	mkfs.ext4 rootfs.img
+	mkdir /mnt/image
+	mount -o loop,rw,sync rootfs.img /mnt/image
+	tar -jxvf core-image-minimal-beaglebone.tar.bz2 -C /mnt/image
+	umount /mnt/image
+Optional steps from KSRC(may skip initially):-
+	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_install INSTALL_MOD_PATH=/mnt/image
+	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- firmware_install INSTALL_FW_PATH=/mnt/image
+-----------------------------------------------------------------------------
+5.Setup tftp server,minicom
+	zypper install yast2-tftp-server (or)
+	rpm -ivh tftp-5.2-3.2.1.i586.rpm yast2-tftp-server-2.22.2-2.1.2.noarch.rpm
+	goto YaST2 --> NetworkServices --> TFTP Server
+	Enable TFTP Server and select suitable dir for Boot Image Dir
+	Copy necessary files - uImage as uImage_3.12, am335x-boneblack_3.8.13.dtb,initrd.img to TFTP Boot Image Directory from sdtemp dir
+	Install minicom with given set of rpms 
+-----------------------------------------------------------------------------
+6.Booting the board
+	Install the minicom from given rpms(minicom,rzsz,ckermit) and configure it(Hints:- ctrl+A o, /dev/ttyUSB0,1152008N1)
+	Connect the TTL pins of BBB with host machine using USB-TTL cable
+	Pin1 -- black(ground), Pin4 -- Green, Pin5 -- White
+	Caution:- Dont connect red wire of ttl cable which is vcc
+	Connect ethernet port of BBB with Host machine, assign suitable ip
+	for host machine say 192.168.0.1 with following command
+		ifconfig eth0 192.168.0.1
+	Start minicom with /dev/ttyUSB0 as serial port and 115200n81 config
+	Note:- /dev/ttyUSB0 may vary as per the usage,verify thru dmesg or "ls /dev/tty*"	before proceeding
+	Power up the board using mini USB port	
+	Stop auto boot at u-boot level and enter the following commands
+ 	setenv ipaddr 192.168.0.1
+	setenv serverip 192.168.0.2
+      	ping 192.168.0.1
+	tftp 88080000 initrd.img	
+	#note down size of initrd.img transferred over tftp
+	tftp 0x82000000  uImage
+	tftp 0x88000000  am335x-boneblack.dtb
+	setenv bootargs 'console=ttyO0,115200n8 root=/dev/ram0 initrd=88080000,<size-of-initrd.img>'
+	bootm 0x82000000 - 0x88000000
+
+	You should observe up and running linux with minimal root file system.
+	
+		
+
+
+

@@ -1,0 +1,3 @@
+
+./qemu-4.2.1/aarch64-softmmu/qemu-system-aarch64 -machine virt -cpu cortex-a57 -kernel ../KERNEL/pi3/linux/arch/arm64/boot/Image -initrd ../BUSYBOX/for_arm64/rootfs.img.gz -append "root=/dev/ram rdinit=/sbin/init" -nographic -m 1024M -smp 4
+
