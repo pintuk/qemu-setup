@@ -1,0 +1,3 @@
+cp -f ../../KERNEL/CRASH-KERNEL-TEST/HANA-5.4/capture-kernel-image/Image _install/home/pintu/kexec-kernel/Image-capture-hana-5.4
+sync
+./create_rootfs_arm64.sh
